@@ -183,36 +183,49 @@ body {
 }
 
 /* ============================================ */
-/* --- NEW: Reply Button on Message Hover --- */
+/* --- Message Action Buttons (Reply + Delete) --- */
 /* ============================================ */
-.reply-btn {
+.msg-actions {
     position: absolute;
-    top: -10px;
-    right: -10px;
+    top: -12px;
+    right: -8px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 5;
+}
+.message-bubble.self .msg-actions { right: auto; left: -8px; }
+.message-bubble:hover .msg-actions { opacity: 1; }
+
+.reply-btn,
+.delete-btn {
     width: 28px; height: 28px;
     border-radius: 50%;
     background: white;
     border: 1px solid #e9ecef;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     cursor: pointer;
-    opacity: 0;
-    transition: all 0.2s ease;
     font-size: 0.85rem;
     display: flex; align-items: center; justify-content: center;
-    color: #4a90e2;
     padding: 0;
-    z-index: 5;
+    transition: all 0.2s ease;
 }
-.message-bubble:hover .reply-btn { opacity: 1; }
+.reply-btn { color: #4a90e2; }
 .reply-btn:hover {
     transform: scale(1.15);
     background: #4a90e2;
     color: white;
 }
-.message-bubble.self .reply-btn { right: auto; left: -10px; }
+.delete-btn { color: #e74c3c; font-size: 0.9rem; }
+.delete-btn:hover {
+    transform: scale(1.15);
+    background: #e74c3c;
+    color: white;
+}
 
 /* ============================================ */
-/* --- NEW: Quoted Reply Block inside bubble --- */
+/* --- Quoted Reply Block inside bubble --- */
 /* ============================================ */
 .msg-reply {
     border-left: 3px solid #4a90e2;
@@ -244,7 +257,7 @@ body {
 }
 
 /* ============================================ */
-/* --- NEW: Reply Preview Bar above input --- */
+/* --- Reply Preview Bar above input --- */
 /* ============================================ */
 .reply-preview {
     display: flex;
@@ -390,5 +403,5 @@ body {
         bottom: 75px;
     }
     .emoji-grid { grid-template-columns: repeat(6, 1fr); }
-    .reply-btn { width: 24px; height: 24px; font-size: 0.75rem; }
+    .reply-btn, .delete-btn { width: 24px; height: 24px; font-size: 0.75rem; }
 }

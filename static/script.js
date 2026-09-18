@@ -4,7 +4,7 @@ let username = '';
 let room = '';
 let userAvatar = '#4a90e2';
 let messageIds = {};
-let replyTo = null;   // { id, username, message } when replying
+let replyTo = null;
 
 // Palette for avatar colors
 const AVATAR_COLORS = [
@@ -12,7 +12,7 @@ const AVATAR_COLORS = [
     '#3498db', '#9b59b6', '#e84393', '#16a085', '#c0392b'
 ];
 
-// Emoji list (curated for chat)
+// Emoji list
 const EMOJI_LIST = [
     '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇',
     '🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚',
@@ -93,7 +93,6 @@ emojiBtn.addEventListener('click', (e) => {
     emojiPicker.classList.toggle('d-none');
 });
 
-// --- Close emoji picker when clicking outside ---
 document.addEventListener('click', (e) => {
     if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
         emojiPicker.classList.add('d-none');
@@ -129,7 +128,7 @@ leaveBtn.addEventListener('click', () => {
     window.location.reload();
 });
 
-// --- Send Message (with optional reply) ---
+// --- Send Message ---
 messageForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const msg = messageInput.value.trim();
@@ -149,7 +148,6 @@ messageForm.addEventListener('submit', (e) => {
         avatar: userAvatar
     };
 
-    // Attach reply_to if user was replying
     if (replyTo) {
         payload.reply_to = replyTo;
     }
@@ -157,39 +155,47 @@ messageForm.addEventListener('submit', (e) => {
     socket.emit('send_message', payload);
     messageInput.value = '';
     emojiPicker.classList.add('d-none');
-
-    // Clear the reply state
     hideReplyPreview();
-
     socket.emit('stop_typing', { username, room });
 });
 
-// --- Reply: Click on a reply button (event delegation) ---
+// --- Message Actions: Reply + Delete (event delegation) ---
 messagesDiv.addEventListener('click', (e) => {
-    const btn = e.target.closest('.reply-btn');
-    if (!btn) return;
+    // --- Reply button ---
+    const replyBtn = e.target.closest('.reply-btn');
+    if (replyBtn) {
+        const msgId = replyBtn.dataset.msgId;
+        const bubble = messagesDiv.querySelector(`[data-message-id="${msgId}"]`);
+        if (!bubble) return;
 
-    const msgId = btn.dataset.msgId;
-    const bubble = messagesDiv.querySelector(`[data-message-id="${msgId}"]`);
-    if (!bubble) return;
+        const originalUser = bubble.dataset.username;
+        const bodyEl = bubble.querySelector('.msg-body');
+        const originalText = bodyEl ? bodyEl.textContent : '';
 
-    const originalUser = bubble.dataset.username;
-    const bodyEl = bubble.querySelector('.msg-body');
-    const originalText = bodyEl ? bodyEl.textContent : '';
+        replyTo = {
+            id: msgId,
+            username: originalUser === username ? 'You' : originalUser,
+            message: originalText
+        };
 
-    replyTo = {
-        id: msgId,
-        username: originalUser === username ? 'You' : originalUser,
-        message: originalText
-    };
+        replyToUser.textContent = replyTo.username;
+        replyToText.textContent = replyTo.message;
+        replyPreview.classList.remove('d-none');
+        messageInput.focus();
+        return;
+    }
 
-    replyToUser.textContent = replyTo.username;
-    replyToText.textContent = replyTo.message;
-    replyPreview.classList.remove('d-none');
-    messageInput.focus();
+    // --- Delete button ---
+    const deleteBtn = e.target.closest('.delete-btn');
+    if (deleteBtn) {
+        const msgId = deleteBtn.dataset.msgId;
+        if (!confirm('Delete this message for everyone?')) return;
+        socket.emit('delete_message', { message_id: msgId, room, username });
+        return;
+    }
 });
 
-// --- Reply: Cancel button ---
+// --- Reply Cancel ---
 replyCancel.addEventListener('click', hideReplyPreview);
 
 function hideReplyPreview() {
@@ -217,6 +223,22 @@ socket.on('message', (data) => {
             setTimeout(() => socket.emit('message_read', { message_id: data.id, room: data.room }), 300);
         }
     }
+});
+
+// --- Receive: Message Deleted ---
+socket.on('message_deleted', (data) => {
+    const bubble = messagesDiv.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (bubble) {
+        const wrapper = bubble.closest('.message-wrapper');
+        if (wrapper) {
+            wrapper.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+            wrapper.style.opacity = '0';
+            wrapper.style.transform = 'scale(0.9)';
+            setTimeout(() => wrapper.remove(), 200);
+        }
+    }
+    // Clean up reference
+    delete messageIds[data.message_id];
 });
 
 // --- Receive: Status Update ---
@@ -273,7 +295,7 @@ function renderTick(status) {
     return '';
 }
 
-// --- Helper: Render a Message Bubble (with Avatar + optional Reply) ---
+// --- Helper: Render a Message Bubble ---
 function addMessage(data, type) {
     const wrapper = document.createElement('div');
     wrapper.className = `message-wrapper ${type}`;
@@ -288,7 +310,7 @@ function addMessage(data, type) {
 
     const avatarHTML = `<div class="message-avatar" style="background:${color};">${initial}</div>`;
 
-    // Reply block (only if this message is a reply)
+    // Reply block
     let replyHTML = '';
     if (data.reply_to) {
         replyHTML = `
@@ -299,9 +321,17 @@ function addMessage(data, type) {
         `;
     }
 
+    // Delete button — only for our OWN messages
+    const deleteHTML = (type === 'self')
+        ? `<button class="delete-btn" data-msg-id="${data.id}" title="Delete">🗑</button>`
+        : '';
+
     const bubbleHTML = `
         <div class="message-bubble ${type}" data-message-id="${data.id}" data-username="${escapeHTML(data.username)}">
-            <button class="reply-btn" data-msg-id="${data.id}" title="Reply">↩</button>
+            <div class="msg-actions">
+                <button class="reply-btn" data-msg-id="${data.id}" title="Reply">↩</button>
+                ${deleteHTML}
+            </div>
             ${replyHTML}
             <div class="msg-meta">${type === 'self' ? 'You' : escapeHTML(data.username)}</div>
             <div class="msg-body">${escapeHTML(data.message)}</div>

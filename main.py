@@ -67,7 +67,6 @@ def handle_disconnect():
 
 @socketio.on('send_message')
 def handle_send_message(data):
-    """Store the message and broadcast. The 'reply_to' field (if present) is stored automatically."""
     room = data['room']
     data.setdefault('status', 'sent')
 
@@ -76,6 +75,29 @@ def handle_send_message(data):
     messages[room].append(data)
 
     emit('message', data, room=room)
+
+
+@socketio.on('delete_message')
+def handle_delete_message(data):
+    """Delete a message — ONLY if the requester is the original author."""
+    room = data['room']
+    message_id = data['message_id']
+    requester = data['username']
+
+    if room not in messages:
+        return
+
+    # Find the message and verify ownership
+    target = None
+    for msg in messages[room]:
+        if msg['id'] == message_id:
+            target = msg
+            break
+
+    # Only delete if the requester is the author
+    if target and target['username'] == requester:
+        messages[room].remove(target)
+        emit('message_deleted', {'message_id': message_id}, room=room)
 
 
 @socketio.on('message_delivered')
