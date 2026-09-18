@@ -4,6 +4,7 @@ let username = '';
 let room = '';
 let userAvatar = '#4a90e2';
 let messageIds = {};
+let replyTo = null;   // { id, username, message } when replying
 
 // Palette for avatar colors
 const AVATAR_COLORS = [
@@ -47,6 +48,10 @@ const avatarPreview = document.getElementById('avatarPreview');
 const emojiBtn = document.getElementById('emojiBtn');
 const emojiPicker = document.getElementById('emojiPicker');
 const emojiGrid = document.getElementById('emojiGrid');
+const replyPreview = document.getElementById('replyPreview');
+const replyToUser = document.getElementById('replyToUser');
+const replyToText = document.getElementById('replyToText');
+const replyCancel = document.getElementById('replyCancel');
 
 // --- Build the Color Picker ---
 AVATAR_COLORS.forEach((color, index) => {
@@ -72,7 +77,6 @@ EMOJI_LIST.forEach(emoji => {
     btn.className = 'emoji-item';
     btn.textContent = emoji;
     btn.addEventListener('click', () => {
-        // Insert emoji at the current cursor position
         const start = messageInput.selectionStart;
         const end = messageInput.selectionEnd;
         const text = messageInput.value;
@@ -125,7 +129,7 @@ leaveBtn.addEventListener('click', () => {
     window.location.reload();
 });
 
-// --- Send Message ---
+// --- Send Message (with optional reply) ---
 messageForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const msg = messageInput.value.trim();
@@ -145,11 +149,53 @@ messageForm.addEventListener('submit', (e) => {
         avatar: userAvatar
     };
 
+    // Attach reply_to if user was replying
+    if (replyTo) {
+        payload.reply_to = replyTo;
+    }
+
     socket.emit('send_message', payload);
     messageInput.value = '';
     emojiPicker.classList.add('d-none');
+
+    // Clear the reply state
+    hideReplyPreview();
+
     socket.emit('stop_typing', { username, room });
 });
+
+// --- Reply: Click on a reply button (event delegation) ---
+messagesDiv.addEventListener('click', (e) => {
+    const btn = e.target.closest('.reply-btn');
+    if (!btn) return;
+
+    const msgId = btn.dataset.msgId;
+    const bubble = messagesDiv.querySelector(`[data-message-id="${msgId}"]`);
+    if (!bubble) return;
+
+    const originalUser = bubble.dataset.username;
+    const bodyEl = bubble.querySelector('.msg-body');
+    const originalText = bodyEl ? bodyEl.textContent : '';
+
+    replyTo = {
+        id: msgId,
+        username: originalUser === username ? 'You' : originalUser,
+        message: originalText
+    };
+
+    replyToUser.textContent = replyTo.username;
+    replyToText.textContent = replyTo.message;
+    replyPreview.classList.remove('d-none');
+    messageInput.focus();
+});
+
+// --- Reply: Cancel button ---
+replyCancel.addEventListener('click', hideReplyPreview);
+
+function hideReplyPreview() {
+    replyPreview.classList.add('d-none');
+    replyTo = null;
+}
 
 // --- Receive: Chat History ---
 socket.on('history', (history) => {
@@ -227,7 +273,7 @@ function renderTick(status) {
     return '';
 }
 
-// --- Helper: Render a Message Bubble ---
+// --- Helper: Render a Message Bubble (with Avatar + optional Reply) ---
 function addMessage(data, type) {
     const wrapper = document.createElement('div');
     wrapper.className = `message-wrapper ${type}`;
@@ -242,8 +288,21 @@ function addMessage(data, type) {
 
     const avatarHTML = `<div class="message-avatar" style="background:${color};">${initial}</div>`;
 
+    // Reply block (only if this message is a reply)
+    let replyHTML = '';
+    if (data.reply_to) {
+        replyHTML = `
+            <div class="msg-reply">
+                <div class="msg-reply-user">${escapeHTML(data.reply_to.username)}</div>
+                <div class="msg-reply-text">${escapeHTML(data.reply_to.message)}</div>
+            </div>
+        `;
+    }
+
     const bubbleHTML = `
-        <div class="message-bubble ${type}" data-message-id="${data.id}">
+        <div class="message-bubble ${type}" data-message-id="${data.id}" data-username="${escapeHTML(data.username)}">
+            <button class="reply-btn" data-msg-id="${data.id}" title="Reply">↩</button>
+            ${replyHTML}
             <div class="msg-meta">${type === 'self' ? 'You' : escapeHTML(data.username)}</div>
             <div class="msg-body">${escapeHTML(data.message)}</div>
             <div class="msg-time">${ts} ${tickHTML}</div>

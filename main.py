@@ -9,7 +9,7 @@ app.config['SECRET_KEY'] = 'chat-app-super-secret-key'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # In-memory storage
-messages = {}     # { room_name: [ {id, username, room, message, timestamp, status, avatar}, ... ] }
+messages = {}     # { room_name: [ {id, username, room, message, timestamp, status, avatar, reply_to}, ... ] }
 rooms = {}        # { room_name: { sid: {username, avatar} } }
 
 
@@ -67,6 +67,7 @@ def handle_disconnect():
 
 @socketio.on('send_message')
 def handle_send_message(data):
+    """Store the message and broadcast. The 'reply_to' field (if present) is stored automatically."""
     room = data['room']
     data.setdefault('status', 'sent')
 

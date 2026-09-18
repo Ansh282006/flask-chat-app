@@ -23,7 +23,6 @@
             <div class="card-body p-5">
                 <h2 class="text-center fw-bold mb-4">💬 Join a Chat</h2>
 
-                <!-- Live Avatar Preview -->
                 <div class="text-center mb-4">
                     <div class="avatar-preview" id="avatarPreview">?</div>
                 </div>
@@ -72,8 +71,18 @@
                     </span>
                 </div>
 
-                <!-- Message Input with Emoji Picker -->
+                <!-- Message Input + Reply Preview + Emoji Picker -->
                 <div class="bg-white p-3 position-relative">
+
+                    <!-- Reply Preview Bar -->
+                    <div class="reply-preview d-none" id="replyPreview">
+                        <div class="reply-preview-content">
+                            <div class="reply-preview-label">Replying to <strong id="replyToUser">User</strong></div>
+                            <div class="reply-preview-text" id="replyToText">Message...</div>
+                        </div>
+                        <button type="button" class="reply-cancel" id="replyCancel">✕</button>
+                    </div>
+
                     <!-- Emoji Picker Popup -->
                     <div class="emoji-picker d-none" id="emojiPicker">
                         <div class="emoji-picker-header">
