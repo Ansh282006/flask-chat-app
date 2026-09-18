@@ -5,7 +5,8 @@ let room = '';
 let userAvatar = '#4a90e2';
 let messageIds = {};
 let replyTo = null;
-let soundEnabled = true;   // NEW: sound notification toggle
+let soundEnabled = true;
+let darkMode = false;
 
 // Palette for avatar colors
 const AVATAR_COLORS = [
@@ -54,9 +55,44 @@ const replyToUser = document.getElementById('replyToUser');
 const replyToText = document.getElementById('replyToText');
 const replyCancel = document.getElementById('replyCancel');
 const soundToggle = document.getElementById('soundToggle');
+const darkModeToggle = document.getElementById('darkModeToggle');
 
 // ============================================
-// --- NEW: Sound Notification (Web Audio API) ---
+// --- NEW: Dark Mode Toggle (with localStorage) ---
+// ============================================
+function applyDarkMode(enabled) {
+    darkMode = enabled;
+    if (enabled) {
+        document.body.classList.add('dark-mode');
+        darkModeToggle.textContent = '☀️';
+        darkModeToggle.title = 'Switch to light mode';
+    } else {
+        document.body.classList.remove('dark-mode');
+        darkModeToggle.textContent = '🌙';
+        darkModeToggle.title = 'Switch to dark mode';
+    }
+    localStorage.setItem('chatDarkMode', enabled ? '1' : '0');
+}
+
+// Load saved preference on page load
+(function initDarkMode() {
+    const saved = localStorage.getItem('chatDarkMode');
+    if (saved === '1') {
+        applyDarkMode(true);
+    } else if (saved === '0') {
+        applyDarkMode(false);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // First visit: match the OS preference
+        applyDarkMode(true);
+    }
+})();
+
+darkModeToggle.addEventListener('click', () => {
+    applyDarkMode(!darkMode);
+});
+
+// ============================================
+// --- Sound Notification (Web Audio API) ---
 // ============================================
 let audioCtx = null;
 
@@ -64,24 +100,20 @@ function playNotificationSound() {
     if (!soundEnabled) return;
 
     try {
-        // Lazy-init the Audio Context on first use (browsers block early autoplay)
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        // If the context is suspended, resume it (some browsers pause it after idle)
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
 
-        // Create two short "beeps" layered for a pleasant ding
         const now = audioCtx.currentTime;
 
-        // First tone
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(880, now);                // A5
+        osc1.frequency.setValueAtTime(880, now);
         gain1.gain.setValueAtTime(0.0001, now);
         gain1.gain.exponentialRampToValueAtTime(0.15, now + 0.01);
         gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
@@ -90,11 +122,10 @@ function playNotificationSound() {
         osc1.start(now);
         osc1.stop(now + 0.2);
 
-        // Second, slightly higher tone
         const osc2 = audioCtx.createOscillator();
         const gain2 = audioCtx.createGain();
         osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(1174.66, now + 0.08);     // D6
+        osc2.frequency.setValueAtTime(1174.66, now + 0.08);
         gain2.gain.setValueAtTime(0.0001, now + 0.08);
         gain2.gain.exponentialRampToValueAtTime(0.12, now + 0.09);
         gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
@@ -108,17 +139,13 @@ function playNotificationSound() {
     }
 }
 
-// --- Sound Toggle Button ---
 soundToggle.addEventListener('click', () => {
     soundEnabled = !soundEnabled;
     soundToggle.textContent = soundEnabled ? '🔔' : '🔕';
     soundToggle.style.opacity = soundEnabled ? '1' : '0.5';
-
-    // Play a quick preview sound when turning ON
     if (soundEnabled) playNotificationSound();
 });
 
-// --- Unlock Audio on First User Interaction (browser autoplay policy) ---
 function unlockAudio() {
     if (!audioCtx) {
         try {
@@ -298,9 +325,7 @@ socket.on('message', (data) => {
     typingIndicator.classList.add('d-none');
 
     if (type === 'other') {
-        // NEW: Play notification sound for messages from others
         playNotificationSound();
-
         socket.emit('message_delivered', { message_id: data.id, room: data.room });
         if (!document.hidden) {
             setTimeout(() => socket.emit('message_read', { message_id: data.id, room: data.room }), 300);
@@ -334,7 +359,7 @@ socket.on('status_update', (data) => {
 // --- Receive: System Status ---
 socket.on('status', (data) => {
     const div = document.createElement('div');
-    div.className = 'text-center text-muted small my-2';
+    div.className = 'text-center text-muted small my-2 system-message';
     div.textContent = data.msg;
     messagesDiv.appendChild(div);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;

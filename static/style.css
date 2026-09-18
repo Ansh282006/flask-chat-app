@@ -4,6 +4,7 @@ body {
     animation: gradientBG 15s ease infinite;
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
 @keyframes gradientBG {
@@ -22,6 +23,7 @@ body {
     position: absolute; border-radius: 50%;
     filter: blur(80px); opacity: 0.4;
     animation: float 12s infinite ease-in-out alternate;
+    transition: opacity 0.5s ease;
 }
 .shape-1 { width: 400px; height: 400px; background: #4a90e2; top: -100px; left: -100px; }
 .shape-2 { width: 500px; height: 500px; background: #9b59b6; bottom: -150px; right: -150px; animation-delay: -3s; }
@@ -69,6 +71,7 @@ body {
     height: 80vh;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.98) !important;
+    transition: background 0.3s ease;
 }
 
 /* --- Sidebar --- */
@@ -76,6 +79,7 @@ body {
     width: 220px; background: #2c3e50; color: #ecf0f1;
     display: flex; flex-direction: column;
     border-right: 1px solid #1a252f;
+    transition: background 0.3s ease;
 }
 .sidebar-header {
     padding: 16px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -118,7 +122,12 @@ body {
 
 /* --- Main Chat Area --- */
 .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.chat-messages { flex: 1; overflow-y: auto; background: #f8f9fa; padding: 16px; }
+.chat-messages {
+    flex: 1; overflow-y: auto;
+    background: #f8f9fa;
+    padding: 16px;
+    transition: background 0.3s ease;
+}
 
 /* --- Message Wrapper + Avatar --- */
 .message-wrapper {
@@ -307,6 +316,7 @@ body {
     font-size: 0.85rem; color: #6c757d;
     font-style: italic;
     animation: fadeIn 0.3s ease;
+    transition: background 0.3s ease;
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .typing-dots span {
@@ -348,6 +358,7 @@ body {
     overflow: hidden;
     display: flex; flex-direction: column;
     animation: emojiSlideUp 0.25s ease-out;
+    transition: background 0.3s ease;
 }
 @keyframes emojiSlideUp {
     from { opacity: 0; transform: translateY(10px) scale(0.97); }
@@ -384,18 +395,164 @@ body {
     transform: scale(1.25);
 }
 
-/* ============================================ */
-/* --- NEW: Sound Toggle Button --- */
-/* ============================================ */
-#soundToggle {
+/* --- Sound Toggle Button --- */
+#soundToggle, #darkModeToggle {
     font-size: 1rem;
     padding: 4px 10px;
     transition: all 0.2s ease;
     border-radius: 8px;
 }
-#soundToggle:hover {
+#soundToggle:hover, #darkModeToggle:hover {
     transform: scale(1.08);
     background: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================ */
+/* ============ DARK MODE STYLES ============ */
+/* ============================================ */
+body.dark-mode {
+    background: linear-gradient(-45deg, #0b141a, #111b21, #0b141a, #1a1f2e);
+    background-size: 400% 400%;
+    color: #e9edef;
+}
+
+/* Dim the floating shapes a bit */
+body.dark-mode .shape { opacity: 0.25; }
+body.dark-mode .shape-1 { background: #4a90e2; }
+body.dark-mode .shape-2 { background: #7d3c98; }
+body.dark-mode .shape-3 { background: #148f77; }
+
+/* Join Card */
+body.dark-mode .card {
+    background: #111b21 !important;
+    color: #e9edef;
+}
+body.dark-mode .card .form-label { color: #e9edef; }
+body.dark-mode .card h2 { color: #e9edef; }
+body.dark-mode .form-control {
+    background: #202c33;
+    color: #e9edef;
+    border-color: #2a3942;
+}
+body.dark-mode .form-control::placeholder { color: #8696a0; }
+body.dark-mode .form-control:focus {
+    background: #2a3942;
+    color: #e9edef;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+}
+
+/* Chat Container */
+body.dark-mode .chat-container {
+    background: #111b21 !important;
+    color: #e9edef;
+}
+
+/* Sidebar */
+body.dark-mode .chat-sidebar {
+    background: #202c33;
+    border-right-color: #2a3942;
+}
+body.dark-mode .sidebar-header { border-bottom-color: #2a3942; }
+
+/* Chat Header */
+body.dark-mode .card-header.bg-dark {
+    background: #202c33 !important;
+    border-bottom: 1px solid #2a3942;
+}
+
+/* Messages area */
+body.dark-mode .chat-messages {
+    background: #0b141a;
+}
+
+/* Other messages */
+body.dark-mode .message-bubble.other {
+    background: #202c33;
+    color: #e9edef;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+body.dark-mode .message-bubble.other .msg-time { color: #8696a0; }
+
+/* Self messages — slightly muted blue for dark mode */
+body.dark-mode .message-bubble.self {
+    background: #005c4b;
+}
+
+/* System status messages */
+body.dark-mode .system-message,
+body.dark-mode .text-muted {
+    color: #8696a0 !important;
+}
+
+/* Action buttons */
+body.dark-mode .reply-btn,
+body.dark-mode .delete-btn {
+    background: #202c33;
+    border-color: #2a3942;
+    color: #e9edef;
+}
+body.dark-mode .reply-btn:hover {
+    background: #4a90e2;
+    color: white;
+}
+body.dark-mode .delete-btn:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+/* Reply preview block inside bubbles */
+body.dark-mode .msg-reply {
+    border-left-color: #4a90e2;
+    background: rgba(74, 144, 226, 0.15);
+}
+body.dark-mode .message-bubble.self .msg-reply {
+    border-left-color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Reply preview bar above input */
+body.dark-mode .reply-preview {
+    background: #202c33;
+    border-left-color: #4a90e2;
+}
+body.dark-mode .reply-preview-text { color: #8696a0; }
+body.dark-mode .reply-cancel:hover {
+    background: rgba(231, 76, 60, 0.2);
+}
+
+/* Input area */
+body.dark-mode .input-area {
+    background: #202c33 !important;
+    border-top: 1px solid #2a3942;
+}
+body.dark-mode .input-area .form-control {
+    background: #2a3942;
+    color: #e9edef;
+    border-color: #2a3942;
+}
+body.dark-mode .input-area .form-control::placeholder { color: #8696a0; }
+
+/* Typing indicator */
+body.dark-mode .typing-indicator {
+    background: #202c33;
+    border-top-color: #2a3942;
+    color: #8696a0;
+}
+body.dark-mode .typing-dots span { background: #8696a0; }
+
+/* Emoji picker */
+body.dark-mode .emoji-picker {
+    background: #202c33;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+body.dark-mode .emoji-picker-header {
+    background: #111b21;
+    color: #8696a0;
+    border-bottom-color: #2a3942;
+}
+body.dark-mode .emoji-item:hover {
+    background: #2a3942;
 }
 
 /* --- Responsive --- */
