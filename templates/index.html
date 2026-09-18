@@ -19,17 +19,32 @@
     <div class="container d-flex justify-content-center align-items-center min-vh-100 py-4">
         
         <!-- Join Screen -->
-        <div class="card shadow-lg border-0 rounded-4 animate__animated animate__zoomIn" id="joinScreen" style="width: 100%; max-width: 420px;">
+        <div class="card shadow-lg border-0 rounded-4 animate__animated animate__zoomIn" id="joinScreen" style="width: 100%; max-width: 460px;">
             <div class="card-body p-5">
                 <h2 class="text-center fw-bold mb-4">💬 Join a Chat</h2>
+
+                <!-- Live Avatar Preview -->
+                <div class="text-center mb-4">
+                    <div class="avatar-preview" id="avatarPreview">?</div>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label fw-bold">Your Name</label>
                     <input type="text" id="usernameInput" class="form-control form-control-lg" placeholder="e.g. Ansh" required>
                 </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Pick Your Avatar Color</label>
+                    <div class="color-picker" id="colorPicker">
+                        <!-- Colors injected by JS -->
+                    </div>
+                </div>
+
                 <div class="mb-4">
                     <label class="form-label fw-bold">Room Name</label>
                     <input type="text" id="roomInput" class="form-control form-control-lg" placeholder="e.g. general" required>
                 </div>
+
                 <button class="btn btn-primary btn-lg w-100 fw-bold" id="joinBtn">Join Room</button>
             </div>
         </div>

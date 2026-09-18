@@ -9,8 +9,8 @@ app.config['SECRET_KEY'] = 'chat-app-super-secret-key'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # In-memory storage
-messages = {}     # { room_name: [ {id, username, room, message, timestamp, status}, ... ] }
-rooms = {}        # { room_name: { sid: username } }
+messages = {}     # { room_name: [ {id, username, room, message, timestamp, status, avatar}, ... ] }
+rooms = {}        # { room_name: { sid: {username, avatar} } }
 
 
 @app.route('/')
@@ -22,6 +22,7 @@ def index():
 def handle_join(data):
     username = data['username']
     room = data['room']
+    avatar = data.get('avatar', '#4a90e2')   # default blue if not provided
     sid = request.sid
 
     join_room(room)
@@ -31,7 +32,7 @@ def handle_join(data):
     if room not in rooms:
         rooms[room] = {}
 
-    rooms[room][sid] = username
+    rooms[room][sid] = {'username': username, 'avatar': avatar}
 
     emit('history', messages[room])
     emit('status', {'msg': f'{username} has joined the room.'}, room=room)
@@ -57,7 +58,8 @@ def handle_disconnect():
     sid = request.sid
     for room_name, users in list(rooms.items()):
         if sid in users:
-            username = users[sid]
+            user_info = users[sid]
+            username = user_info['username']
             del users[sid]
             emit('status', {'msg': f'{username} has left the room.'}, room=room_name)
             emit('user_list', {'users': list(users.values())}, room=room_name)
@@ -65,46 +67,36 @@ def handle_disconnect():
 
 @socketio.on('send_message')
 def handle_send_message(data):
-    """Store the message and broadcast to the room."""
     room = data['room']
-
-    # Ensure the message has a status field
     data.setdefault('status', 'sent')
 
     if room not in messages:
         messages[room] = []
     messages[room].append(data)
 
-    # Broadcast to everyone in the room
     emit('message', data, room=room)
 
 
 @socketio.on('message_delivered')
 def handle_message_delivered(data):
-    """A recipient's browser received the message. Mark as delivered and notify the sender."""
     room = data['room']
     message_id = data['message_id']
-
     for msg in messages.get(room, []):
         if msg['id'] == message_id:
-            if msg['status'] == 'sent':   # only bump forward
+            if msg['status'] == 'sent':
                 msg['status'] = 'delivered'
             break
-
     emit('status_update', {'message_id': message_id, 'status': 'delivered'}, room=room)
 
 
 @socketio.on('message_read')
 def handle_message_read(data):
-    """A recipient actually viewed the message. Mark as read and notify the sender."""
     room = data['room']
     message_id = data['message_id']
-
     for msg in messages.get(room, []):
         if msg['id'] == message_id:
             msg['status'] = 'read'
             break
-
     emit('status_update', {'message_id': message_id, 'status': 'read'}, room=room)
 
 
