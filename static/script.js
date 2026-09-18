@@ -39,13 +39,23 @@ leaveBtn.addEventListener('click', () => {
     window.location.reload();
 });
 
-// --- Send Message ---
+// --- Send Message (with timestamp) ---
 messageForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const msg = messageInput.value.trim();
     if (!msg) return;
 
-    socket.emit('send_message', { username, room, message: msg });
+    // Capture the current time in a friendly format (e.g., "10:45 PM")
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    socket.emit('send_message', {
+        username,
+        room,
+        message: msg,
+        timestamp: timestamp
+    });
+
     messageInput.value = '';
 
     // Stop typing indicator immediately after sending
@@ -61,7 +71,6 @@ socket.on('history', (history) => {
 socket.on('message', (data) => {
     const type = data.username === username ? 'self' : 'other';
     addMessage(data, type);
-    // Hide typing indicator when a new message arrives
     typingIndicator.classList.add('d-none');
 });
 
@@ -77,7 +86,6 @@ socket.on('status', (data) => {
 // --- Typing Indicator Logic ---
 let typingTimeout = null;
 
-// When user types, emit "typing"
 messageInput.addEventListener('input', () => {
     if (!username || !room) return;
 
@@ -89,24 +97,27 @@ messageInput.addEventListener('input', () => {
     }, 1500);
 });
 
-// When someone else is typing
 socket.on('typing', (data) => {
     typingText.textContent = `${data.username} is typing`;
     typingIndicator.classList.remove('d-none');
 });
 
-// When someone stops typing
 socket.on('stop_typing', () => {
     typingIndicator.classList.add('d-none');
 });
 
-// --- Helper: Render a Message Bubble ---
+// --- Helper: Render a Message Bubble (with timestamp) ---
 function addMessage(data, type) {
     const div = document.createElement('div');
     div.className = `message-bubble ${type}`;
+
+    // Fallback: if an older message has no timestamp, generate one from now
+    const ts = data.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     div.innerHTML = `
         <div class="msg-meta">${type === 'self' ? 'You' : data.username}</div>
         <div class="msg-body">${escapeHTML(data.message)}</div>
+        <div class="msg-time">${ts}</div>
     `;
     messagesDiv.appendChild(div);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
