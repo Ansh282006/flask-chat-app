@@ -16,6 +16,8 @@ const messageForm = document.getElementById('messageForm');
 const messageInput = document.getElementById('messageInput');
 const typingIndicator = document.getElementById('typingIndicator');
 const typingText = document.getElementById('typingText');
+const userList = document.getElementById('userList');
+const userCount = document.getElementById('userCount');
 
 // --- Join Room ---
 joinBtn.addEventListener('click', () => {
@@ -28,7 +30,6 @@ joinBtn.addEventListener('click', () => {
     socket.emit('join', { username, room });
     joinScreen.classList.add('d-none');
     chatScreen.classList.remove('d-none');
-    chatScreen.style.display = 'flex';
     roomLabel.textContent = `#${room}`;
     messageInput.focus();
 });
@@ -45,7 +46,6 @@ messageForm.addEventListener('submit', (e) => {
     const msg = messageInput.value.trim();
     if (!msg) return;
 
-    // Capture the current time in a friendly format (e.g., "10:45 PM")
     const now = new Date();
     const timestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -58,7 +58,6 @@ messageForm.addEventListener('submit', (e) => {
 
     messageInput.value = '';
 
-    // Stop typing indicator immediately after sending
     socket.emit('stop_typing', { username, room });
 });
 
@@ -81,6 +80,11 @@ socket.on('status', (data) => {
     div.textContent = data.msg;
     messagesDiv.appendChild(div);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
+
+// --- NEW: Receive Online Users List ---
+socket.on('user_list', (data) => {
+    renderUserList(data.users);
 });
 
 // --- Typing Indicator Logic ---
@@ -106,16 +110,49 @@ socket.on('stop_typing', () => {
     typingIndicator.classList.add('d-none');
 });
 
+// --- Helper: Render the Online Users Sidebar ---
+function renderUserList(users) {
+    userList.innerHTML = '';
+    userCount.textContent = users.length;
+
+    users.forEach(u => {
+        const li = document.createElement('li');
+        li.className = 'user-item';
+
+        // Generate a color based on the username
+        const color = stringToColor(u);
+        const initial = u.charAt(0).toUpperCase();
+
+        li.innerHTML = `
+            <span class="user-avatar" style="background:${color};">${initial}</span>
+            <span class="user-name">${escapeHTML(u)}${u === username ? ' <em>(you)</em>' : ''}</span>
+            <span class="online-dot"></span>
+        `;
+        userList.appendChild(li);
+    });
+}
+
+// --- Helper: Deterministic color for a username ---
+function stringToColor(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = [
+        '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71',
+        '#1abc9c', '#3498db', '#9b59b6', '#e84393',
+        '#16a085', '#c0392b'
+    ];
+    return colors[Math.abs(hash) % colors.length];
+}
+
 // --- Helper: Render a Message Bubble (with timestamp) ---
 function addMessage(data, type) {
     const div = document.createElement('div');
     div.className = `message-bubble ${type}`;
-
-    // Fallback: if an older message has no timestamp, generate one from now
     const ts = data.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
     div.innerHTML = `
-        <div class="msg-meta">${type === 'self' ? 'You' : data.username}</div>
+        <div class="msg-meta">${type === 'self' ? 'You' : escapeHTML(data.username)}</div>
         <div class="msg-body">${escapeHTML(data.message)}</div>
         <div class="msg-time">${ts}</div>
     `;
