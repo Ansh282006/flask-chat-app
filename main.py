@@ -45,6 +45,18 @@ def handle_send_message(data):
     emit('message', data, room=room)
 
 
+@socketio.on('typing')
+def handle_typing(data):
+    """Broadcast to others that someone is typing."""
+    emit('typing', {'username': data['username']}, room=data['room'], include_self=False)
+
+
+@socketio.on('stop_typing')
+def handle_stop_typing(data):
+    """Broadcast to others that someone stopped typing."""
+    emit('stop_typing', {'username': data['username']}, room=data['room'], include_self=False)
+
+
 if __name__ == '__main__':
     port = 5000
     print("\n" + "=" * 50)
