@@ -34,10 +34,8 @@
             </div>
         </div>
 
-        <!-- Chat Screen (with Sidebar) -->
+        <!-- Chat Screen -->
         <div class="card shadow-lg border-0 rounded-4 d-none chat-container" id="chatScreen">
-
-            <!-- Sidebar: Online Users -->
             <aside class="chat-sidebar">
                 <div class="sidebar-header">
                     <span class="sidebar-title">Online</span>
@@ -46,17 +44,14 @@
                 <ul class="user-list" id="userList"></ul>
             </aside>
 
-            <!-- Main Chat Area -->
             <main class="chat-main">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center p-3">
                     <strong id="roomLabel">#general</strong>
                     <button class="btn btn-sm btn-outline-light" id="leaveBtn">Leave</button>
                 </div>
 
-                <!-- Messages Area -->
                 <div class="chat-messages" id="messages"></div>
 
-                <!-- Typing Indicator -->
                 <div class="typing-indicator px-4 py-2 d-none" id="typingIndicator">
                     <span class="typing-text" id="typingText"></span>
                     <span class="typing-dots">
@@ -64,7 +59,6 @@
                     </span>
                 </div>
 
-                <!-- Message Input -->
                 <div class="bg-white p-3">
                     <form id="messageForm" class="d-flex gap-2">
                         <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." autocomplete="off">

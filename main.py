@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
-# Initialize Flask App (auto-detects templates & static folders)
+# Initialize Flask App
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'chat-app-super-secret-key'
 
@@ -9,8 +9,8 @@ app.config['SECRET_KEY'] = 'chat-app-super-secret-key'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # In-memory storage
-messages = {}                                # { room_name: [ {username, room, message, timestamp}, ... ] }
-rooms = {}                                   # { room_name: { sid: username } }  <-- NEW for online users
+messages = {}     # { room_name: [ {id, username, room, message, timestamp, status}, ... ] }
+rooms = {}        # { room_name: { sid: username } }
 
 
 @app.route('/')
@@ -22,26 +22,19 @@ def index():
 def handle_join(data):
     username = data['username']
     room = data['room']
-    sid = request.sid                        # Unique connection ID for this user
+    sid = request.sid
 
     join_room(room)
 
-    # Initialize room structures
     if room not in messages:
         messages[room] = []
     if room not in rooms:
         rooms[room] = {}
 
-    # Track this user in the room
     rooms[room][sid] = username
 
-    # Send existing chat history to the new user only
     emit('history', messages[room])
-
-    # Notify everyone that someone joined
     emit('status', {'msg': f'{username} has joined the room.'}, room=room)
-
-    # Send the updated online users list to EVERYONE (including the new user)
     emit('user_list', {'users': list(rooms[room].values())}, room=room)
 
 
@@ -52,19 +45,15 @@ def handle_leave(data):
     sid = request.sid
 
     leave_room(room)
-
-    # Remove this user from the room
     if room in rooms and sid in rooms[room]:
         del rooms[room][sid]
 
-    # Notify remaining users
     emit('status', {'msg': f'{username} has left the room.'}, room=room)
     emit('user_list', {'users': list(rooms[room].values())}, room=room)
 
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    """Auto-handle when a user closes the tab without clicking 'Leave'."""
     sid = request.sid
     for room_name, users in list(rooms.items()):
         if sid in users:
@@ -76,11 +65,47 @@ def handle_disconnect():
 
 @socketio.on('send_message')
 def handle_send_message(data):
+    """Store the message and broadcast to the room."""
     room = data['room']
+
+    # Ensure the message has a status field
+    data.setdefault('status', 'sent')
+
     if room not in messages:
         messages[room] = []
     messages[room].append(data)
+
+    # Broadcast to everyone in the room
     emit('message', data, room=room)
+
+
+@socketio.on('message_delivered')
+def handle_message_delivered(data):
+    """A recipient's browser received the message. Mark as delivered and notify the sender."""
+    room = data['room']
+    message_id = data['message_id']
+
+    for msg in messages.get(room, []):
+        if msg['id'] == message_id:
+            if msg['status'] == 'sent':   # only bump forward
+                msg['status'] = 'delivered'
+            break
+
+    emit('status_update', {'message_id': message_id, 'status': 'delivered'}, room=room)
+
+
+@socketio.on('message_read')
+def handle_message_read(data):
+    """A recipient actually viewed the message. Mark as read and notify the sender."""
+    room = data['room']
+    message_id = data['message_id']
+
+    for msg in messages.get(room, []):
+        if msg['id'] == message_id:
+            msg['status'] = 'read'
+            break
+
+    emit('status_update', {'message_id': message_id, 'status': 'read'}, room=room)
 
 
 @socketio.on('typing')

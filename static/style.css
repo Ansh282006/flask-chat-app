@@ -37,7 +37,7 @@ body {
     100% { transform: translate(-30px, 30px) scale(0.9); }
 }
 
-/* --- Chat Container (Sidebar + Main) --- */
+/* --- Chat Container --- */
 .chat-container {
     display: flex;
     width: 100%;
@@ -82,13 +82,7 @@ body {
     font-weight: 700;
 }
 
-.user-list {
-    list-style: none;
-    padding: 10px 0;
-    margin: 0;
-    overflow-y: auto;
-    flex: 1;
-}
+.user-list { list-style: none; padding: 10px 0; margin: 0; overflow-y: auto; flex: 1; }
 
 .user-item {
     display: flex;
@@ -99,38 +93,21 @@ body {
     transition: background 0.2s ease;
 }
 
-.user-item:hover {
-    background: rgba(255, 255, 255, 0.06);
-}
+.user-item:hover { background: rgba(255, 255, 255, 0.06); }
 
 .user-avatar {
-    width: 32px;
-    height: 32px;
+    width: 32px; height: 32px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 0.85rem;
     flex-shrink: 0;
 }
 
-.user-name {
-    flex: 1;
-    color: #ecf0f1;
-    font-weight: 500;
-}
-
-.user-name em {
-    color: #95a5a6;
-    font-size: 0.75rem;
-    font-style: italic;
-}
+.user-name { flex: 1; color: #ecf0f1; font-weight: 500; }
+.user-name em { color: #95a5a6; font-size: 0.75rem; font-style: italic; }
 
 .online-dot {
-    width: 8px;
-    height: 8px;
+    width: 8px; height: 8px;
     border-radius: 50%;
     background: #2ecc71;
     box-shadow: 0 0 6px #2ecc71;
@@ -143,19 +120,9 @@ body {
 }
 
 /* --- Main Chat Area --- */
-.chat-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
+.chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-.chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    background: #f8f9fa;
-    padding: 16px;
-}
+.chat-messages { flex: 1; overflow-y: auto; background: #f8f9fa; padding: 16px; }
 
 /* --- Message Bubbles --- */
 .message-bubble {
@@ -190,15 +157,41 @@ body {
 
 .msg-time {
     font-size: 0.68rem;
-    opacity: 0.65;
+    opacity: 0.85;
     text-align: right;
     margin-top: 3px;
     font-weight: 500;
     letter-spacing: 0.3px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
 }
 
-.message-bubble.self .msg-time { color: rgba(255, 255, 255, 0.85); }
+.message-bubble.self .msg-time { color: rgba(255, 255, 255, 0.9); }
 .message-bubble.other .msg-time { color: #95a5a6; }
+
+/* --- NEW: Read Receipt Ticks --- */
+.msg-tick {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: -3px;   /* Squeeze the two ✓✓ closer */
+    transition: color 0.3s ease;
+}
+
+.tick-single { color: rgba(255, 255, 255, 0.75); }
+
+.tick-double { color: rgba(255, 255, 255, 0.9); }
+
+.tick-read {
+    color: #4fc3f7;  /* WhatsApp blue */
+    animation: tickPop 0.3s ease;
+}
+
+@keyframes tickPop {
+    0% { transform: scale(0.7); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+}
 
 /* --- Card Styling --- */
 .card { transition: transform 0.3s ease; }
@@ -220,8 +213,7 @@ body {
 
 .typing-dots span {
     display: inline-block;
-    width: 5px;
-    height: 5px;
+    width: 5px; height: 5px;
     margin-left: 2px;
     background: #6c757d;
     border-radius: 50%;
@@ -236,19 +228,10 @@ body {
     40% { transform: scale(1); }
 }
 
-/* --- Responsive: Hide sidebar on small screens --- */
+/* --- Responsive --- */
 @media (max-width: 768px) {
-    .chat-sidebar {
-        width: 70px;
-    }
-    .user-name, .sidebar-title, .user-count {
-        display: none;
-    }
-    .user-item {
-        justify-content: center;
-        padding: 10px;
-    }
-    .online-dot {
-        display: none;
-    }
+    .chat-sidebar { width: 70px; }
+    .user-name, .sidebar-title, .user-count { display: none; }
+    .user-item { justify-content: center; padding: 10px; }
+    .online-dot { display: none; }
 }
