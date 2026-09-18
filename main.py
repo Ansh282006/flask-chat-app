@@ -22,7 +22,7 @@ def index():
 def handle_join(data):
     username = data['username']
     room = data['room']
-    avatar = data.get('avatar', '#4a90e2')   # default blue if not provided
+    avatar = data.get('avatar', '#4a90e2')
     sid = request.sid
 
     join_room(room)

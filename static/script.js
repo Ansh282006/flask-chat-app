@@ -2,13 +2,29 @@ const socket = io();
 
 let username = '';
 let room = '';
-let userAvatar = '#4a90e2';   // default color
+let userAvatar = '#4a90e2';
 let messageIds = {};
 
 // Palette for avatar colors
 const AVATAR_COLORS = [
     '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#1abc9c',
     '#3498db', '#9b59b6', '#e84393', '#16a085', '#c0392b'
+];
+
+// Emoji list (curated for chat)
+const EMOJI_LIST = [
+    '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇',
+    '🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚',
+    '😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥳',
+    '😏','😒','😞','😔','😟','😕','🙁','😣','😖','😫',
+    '😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳',
+    '🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭',
+    '🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧',
+    '😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤢',
+    '🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹',
+    '👍','👎','👏','🙌','🙏','🤝','💪','✌️','🤞','🤟',
+    '❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','💕',
+    '🔥','✨','⭐','🌟','💫','💥','🎉','🎊','🎁','🎂'
 ];
 
 // DOM Elements
@@ -28,8 +44,11 @@ const userList = document.getElementById('userList');
 const userCount = document.getElementById('userCount');
 const colorPicker = document.getElementById('colorPicker');
 const avatarPreview = document.getElementById('avatarPreview');
+const emojiBtn = document.getElementById('emojiBtn');
+const emojiPicker = document.getElementById('emojiPicker');
+const emojiGrid = document.getElementById('emojiGrid');
 
-// --- Build the Color Picker on Page Load ---
+// --- Build the Color Picker ---
 AVATAR_COLORS.forEach((color, index) => {
     const swatch = document.createElement('button');
     swatch.type = 'button';
@@ -46,14 +65,43 @@ AVATAR_COLORS.forEach((color, index) => {
     colorPicker.appendChild(swatch);
 });
 
+// --- Build the Emoji Grid ---
+EMOJI_LIST.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'emoji-item';
+    btn.textContent = emoji;
+    btn.addEventListener('click', () => {
+        // Insert emoji at the current cursor position
+        const start = messageInput.selectionStart;
+        const end = messageInput.selectionEnd;
+        const text = messageInput.value;
+        messageInput.value = text.substring(0, start) + emoji + text.substring(end);
+        messageInput.selectionStart = messageInput.selectionEnd = start + emoji.length;
+        messageInput.focus();
+    });
+    emojiGrid.appendChild(btn);
+});
+
+// --- Toggle Emoji Picker ---
+emojiBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    emojiPicker.classList.toggle('d-none');
+});
+
+// --- Close emoji picker when clicking outside ---
+document.addEventListener('click', (e) => {
+    if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+        emojiPicker.classList.add('d-none');
+    }
+});
+
 // --- Live Avatar Preview ---
 function updateAvatarPreview() {
     const initial = usernameInput.value.trim().charAt(0).toUpperCase() || '?';
     avatarPreview.textContent = initial;
     avatarPreview.style.background = userAvatar;
 }
-
-// Live update when typing name
 usernameInput.addEventListener('input', updateAvatarPreview);
 
 // --- Join Room ---
@@ -99,6 +147,7 @@ messageForm.addEventListener('submit', (e) => {
 
     socket.emit('send_message', payload);
     messageInput.value = '';
+    emojiPicker.classList.add('d-none');
     socket.emit('stop_typing', { username, room });
 });
 
@@ -178,23 +227,19 @@ function renderTick(status) {
     return '';
 }
 
-// --- Helper: Render a Message Bubble (with Avatar) ---
+// --- Helper: Render a Message Bubble ---
 function addMessage(data, type) {
     const wrapper = document.createElement('div');
     wrapper.className = `message-wrapper ${type}`;
 
     const ts = data.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    // Determine avatar color
     const color = data.avatar || stringToColor(data.username);
     const initial = (data.username || '?').charAt(0).toUpperCase();
 
-    // Ticks only on self messages
     const tickHTML = (type === 'self')
         ? `<span class="msg-tick">${renderTick(data.status || 'sent')}</span>`
         : '';
 
-    // Avatar on the LEFT for others, on the RIGHT for self
     const avatarHTML = `<div class="message-avatar" style="background:${color};">${initial}</div>`;
 
     const bubbleHTML = `
@@ -220,7 +265,7 @@ function addMessage(data, type) {
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// --- Helper: Online Users Sidebar (uses server-provided avatar) ---
+// --- Helper: Online Users Sidebar ---
 function renderUserList(users) {
     userList.innerHTML = '';
     userCount.textContent = users.length;
@@ -239,7 +284,7 @@ function renderUserList(users) {
     });
 }
 
-// --- Deterministic color from username (fallback) ---
+// --- Deterministic color from username ---
 function stringToColor(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);

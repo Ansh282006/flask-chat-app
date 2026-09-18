@@ -48,14 +48,7 @@ body {
     margin: 0 auto;
 }
 .avatar-preview:hover { transform: scale(1.05); }
-
-.color-picker {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 6px 0;
-}
+.color-picker { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; padding: 6px 0; }
 .color-swatch {
     width: 36px; height: 36px;
     border-radius: 50%;
@@ -83,19 +76,13 @@ body {
 
 /* --- Sidebar --- */
 .chat-sidebar {
-    width: 220px;
-    background: #2c3e50;
-    color: #ecf0f1;
-    display: flex;
-    flex-direction: column;
+    width: 220px; background: #2c3e50; color: #ecf0f1;
+    display: flex; flex-direction: column;
     border-right: 1px solid #1a252f;
 }
 .sidebar-header {
-    padding: 16px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 16px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex; justify-content: space-between; align-items: center;
 }
 .sidebar-title {
     font-weight: 700; text-transform: uppercase;
@@ -124,8 +111,7 @@ body {
 .user-name em { color: #95a5a6; font-size: 0.75rem; font-style: italic; }
 .online-dot {
     width: 8px; height: 8px; border-radius: 50%;
-    background: #2ecc71;
-    box-shadow: 0 0 6px #2ecc71;
+    background: #2ecc71; box-shadow: 0 0 6px #2ecc71;
     animation: pulseDot 2s infinite;
 }
 @keyframes pulseDot {
@@ -137,29 +123,19 @@ body {
 .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .chat-messages { flex: 1; overflow-y: auto; background: #f8f9fa; padding: 16px; }
 
-/* --- NEW: Message Wrapper (holds avatar + bubble side by side) --- */
+/* --- Message Wrapper + Avatar --- */
 .message-wrapper {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
+    display: flex; align-items: flex-end; gap: 8px;
     margin-bottom: 12px;
     animation: bubbleIn 0.3s ease-out;
 }
 .message-wrapper.self { flex-direction: row-reverse; }
 .message-wrapper.other { flex-direction: row; }
-
-/* --- NEW: Avatar next to each message --- */
 .message-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+    width: 36px; height: 36px; border-radius: 50%;
     flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 0.9rem;
     box-shadow: 0 3px 8px rgba(0,0,0,0.18);
     transition: transform 0.2s ease;
 }
@@ -176,10 +152,7 @@ body {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
-.message-bubble.self {
-    background: #4a90e2; color: white;
-    border-bottom-right-radius: 4px;
-}
+.message-bubble.self { background: #4a90e2; color: white; border-bottom-right-radius: 4px; }
 .message-bubble.other {
     background: white; color: #2c3e50;
     border-bottom-left-radius: 4px;
@@ -188,24 +161,18 @@ body {
 .msg-meta { font-size: 0.75rem; font-weight: 700; opacity: 0.8; margin-bottom: 2px; }
 .msg-body { font-size: 0.95rem; line-height: 1.4; }
 .msg-time {
-    font-size: 0.68rem;
-    opacity: 0.85;
-    text-align: right;
-    margin-top: 3px;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 4px;
+    font-size: 0.68rem; opacity: 0.85;
+    text-align: right; margin-top: 3px;
+    font-weight: 500; letter-spacing: 0.3px;
+    display: flex; justify-content: flex-end;
+    align-items: center; gap: 4px;
 }
 .message-bubble.self .msg-time { color: rgba(255, 255, 255, 0.9); }
 .message-bubble.other .msg-time { color: #95a5a6; }
 
 /* --- Read Receipt Ticks --- */
 .msg-tick {
-    font-size: 0.85rem;
-    font-weight: 700;
+    font-size: 0.85rem; font-weight: 700;
     letter-spacing: -3px;
     transition: color 0.3s ease;
 }
@@ -243,6 +210,81 @@ body {
     40% { transform: scale(1); }
 }
 
+/* ============================================ */
+/* --- NEW: Emoji Picker --- */
+/* ============================================ */
+.btn-emoji {
+    font-size: 1.4rem;
+    background: transparent;
+    border: none;
+    padding: 0 10px;
+    line-height: 1;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+    border-radius: 8px;
+}
+.btn-emoji:hover {
+    transform: scale(1.2);
+    background: rgba(74, 144, 226, 0.1);
+}
+
+.emoji-picker {
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    width: 340px;
+    max-height: 320px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 100;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: emojiSlideUp 0.25s ease-out;
+}
+
+@keyframes emojiSlideUp {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.emoji-picker-header {
+    padding: 10px 16px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #95a5a6;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 260px;
+}
+
+.emoji-item {
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+.emoji-item:hover {
+    background: #e0eafc;
+    transform: scale(1.25);
+}
+
 /* --- Responsive --- */
 @media (max-width: 768px) {
     .chat-sidebar { width: 70px; }
@@ -250,4 +292,12 @@ body {
     .user-item { justify-content: center; padding: 10px; }
     .online-dot { display: none; }
     .message-avatar { width: 30px; height: 30px; font-size: 0.8rem; }
+
+    .emoji-picker {
+        width: calc(100% - 40px);
+        left: 20px;
+        right: 20px;
+        bottom: 75px;
+    }
+    .emoji-grid { grid-template-columns: repeat(6, 1fr); }
 }
