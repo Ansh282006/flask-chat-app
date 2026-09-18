@@ -59,7 +59,12 @@
             <main class="chat-main">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center p-3">
                     <strong id="roomLabel">#general</strong>
-                    <button class="btn btn-sm btn-outline-light" id="leaveBtn">Leave</button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-light" id="soundToggle" title="Toggle sound">
+                            🔔
+                        </button>
+                        <button class="btn btn-sm btn-outline-light" id="leaveBtn">Leave</button>
+                    </div>
                 </div>
 
                 <div class="chat-messages" id="messages"></div>

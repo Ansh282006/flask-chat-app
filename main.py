@@ -87,14 +87,12 @@ def handle_delete_message(data):
     if room not in messages:
         return
 
-    # Find the message and verify ownership
     target = None
     for msg in messages[room]:
         if msg['id'] == message_id:
             target = msg
             break
 
-    # Only delete if the requester is the author
     if target and target['username'] == requester:
         messages[room].remove(target)
         emit('message_deleted', {'message_id': message_id}, room=room)

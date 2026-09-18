@@ -5,6 +5,7 @@ let room = '';
 let userAvatar = '#4a90e2';
 let messageIds = {};
 let replyTo = null;
+let soundEnabled = true;   // NEW: sound notification toggle
 
 // Palette for avatar colors
 const AVATAR_COLORS = [
@@ -52,6 +53,86 @@ const replyPreview = document.getElementById('replyPreview');
 const replyToUser = document.getElementById('replyToUser');
 const replyToText = document.getElementById('replyToText');
 const replyCancel = document.getElementById('replyCancel');
+const soundToggle = document.getElementById('soundToggle');
+
+// ============================================
+// --- NEW: Sound Notification (Web Audio API) ---
+// ============================================
+let audioCtx = null;
+
+function playNotificationSound() {
+    if (!soundEnabled) return;
+
+    try {
+        // Lazy-init the Audio Context on first use (browsers block early autoplay)
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // If the context is suspended, resume it (some browsers pause it after idle)
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        // Create two short "beeps" layered for a pleasant ding
+        const now = audioCtx.currentTime;
+
+        // First tone
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, now);                // A5
+        gain1.gain.setValueAtTime(0.0001, now);
+        gain1.gain.exponentialRampToValueAtTime(0.15, now + 0.01);
+        gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.2);
+
+        // Second, slightly higher tone
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1174.66, now + 0.08);     // D6
+        gain2.gain.setValueAtTime(0.0001, now + 0.08);
+        gain2.gain.exponentialRampToValueAtTime(0.12, now + 0.09);
+        gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.08);
+        osc2.stop(now + 0.26);
+
+    } catch (err) {
+        console.warn('Audio error:', err);
+    }
+}
+
+// --- Sound Toggle Button ---
+soundToggle.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    soundToggle.textContent = soundEnabled ? '🔔' : '🔕';
+    soundToggle.style.opacity = soundEnabled ? '1' : '0.5';
+
+    // Play a quick preview sound when turning ON
+    if (soundEnabled) playNotificationSound();
+});
+
+// --- Unlock Audio on First User Interaction (browser autoplay policy) ---
+function unlockAudio() {
+    if (!audioCtx) {
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('keydown', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('keydown', unlockAudio);
 
 // --- Build the Color Picker ---
 AVATAR_COLORS.forEach((color, index) => {
@@ -120,6 +201,7 @@ joinBtn.addEventListener('click', () => {
     chatScreen.classList.remove('d-none');
     roomLabel.textContent = `#${room}`;
     messageInput.focus();
+    unlockAudio();
 });
 
 // --- Leave Room ---
@@ -159,9 +241,8 @@ messageForm.addEventListener('submit', (e) => {
     socket.emit('stop_typing', { username, room });
 });
 
-// --- Message Actions: Reply + Delete (event delegation) ---
+// --- Message Actions: Reply + Delete ---
 messagesDiv.addEventListener('click', (e) => {
-    // --- Reply button ---
     const replyBtn = e.target.closest('.reply-btn');
     if (replyBtn) {
         const msgId = replyBtn.dataset.msgId;
@@ -185,7 +266,6 @@ messagesDiv.addEventListener('click', (e) => {
         return;
     }
 
-    // --- Delete button ---
     const deleteBtn = e.target.closest('.delete-btn');
     if (deleteBtn) {
         const msgId = deleteBtn.dataset.msgId;
@@ -218,6 +298,9 @@ socket.on('message', (data) => {
     typingIndicator.classList.add('d-none');
 
     if (type === 'other') {
+        // NEW: Play notification sound for messages from others
+        playNotificationSound();
+
         socket.emit('message_delivered', { message_id: data.id, room: data.room });
         if (!document.hidden) {
             setTimeout(() => socket.emit('message_read', { message_id: data.id, room: data.room }), 300);
@@ -237,7 +320,6 @@ socket.on('message_deleted', (data) => {
             setTimeout(() => wrapper.remove(), 200);
         }
     }
-    // Clean up reference
     delete messageIds[data.message_id];
 });
 
@@ -310,7 +392,6 @@ function addMessage(data, type) {
 
     const avatarHTML = `<div class="message-avatar" style="background:${color};">${initial}</div>`;
 
-    // Reply block
     let replyHTML = '';
     if (data.reply_to) {
         replyHTML = `
@@ -321,7 +402,6 @@ function addMessage(data, type) {
         `;
     }
 
-    // Delete button — only for our OWN messages
     const deleteHTML = (type === 'self')
         ? `<button class="delete-btn" data-msg-id="${data.id}" title="Delete">🗑</button>`
         : '';
